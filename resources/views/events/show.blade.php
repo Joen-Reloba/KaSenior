@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $event->name)
 @section('content')
-<header class="page-header"><div><x-back-link :href="route('events.index')">Back to Events</x-back-link><h1>{{ $event->name }}</h1><p>{{ $event->event_date->format('F j, Y') }} · Contribution ₱{{ number_format($event->amount_cents / 100, 2) }} per member</p></div><div class="actions no-print"><a class="button outline" href="{{ route('events.edit', $event) }}"><x-icon name="Edit" screen="6" />Edit Event</a><a class="button" @if(request()->boolean('print')) href="#" data-print @else href="{{ route('events.show', ['event' => $event, 'print' => 1]) }}" @endif><x-icon name="Printer" screen="6" />Print Collection Report</a></div></header>
+<header class="page-header"><div><x-back-link :href="route('events.index')">Back to Events</x-back-link><h1>{{ $event->name }}</h1><p>{{ $event->event_date->format('F j, Y') }} · Contribution ₱{{ number_format($event->amount_cents / 100, 2) }} per member</p></div><div class="actions no-print"><a class="button outline" href="{{ route('events.edit', $event) }}"><x-icon name="Edit" screen="6" />Edit Event</a><a class="button" @if(request()->boolean('print')) href="#" data-print data-print-on-load @else href="{{ route('events.show', ['event' => $event, 'print' => 1]) }}" @endif><x-icon name="Printer" screen="6" />Print Collection Report</a></div></header>
 @if($event->description)<p>{{ $event->description }}</p>@endif
 <div class="stats">
 @foreach([['Total Expected', $summary['expected'], $summary['count'].' members', 'blue'], ['Collected', $summary['collected'], $summary['paid'].' members paid', 'green'], ['Outstanding', $summary['outstanding'], $summary['unpaid'].' members unpaid', 'amber']] as [$label, $value, $caption, $color])

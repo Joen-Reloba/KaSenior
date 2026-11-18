@@ -1,6 +1,136 @@
-document.querySelectorAll('[data-print]').forEach(button => {
-    button.addEventListener('click', event => { event.preventDefault(); window.print(); });
+document.querySelectorAll('[data-default-value]').forEach(input => {
+    const restoreDefault = () => {
+        if (!input.value.trim()) {
+            input.value = input.dataset.defaultValue;
+        }
+    };
+    input.addEventListener('blur', restoreDefault);
+    input.addEventListener('input', restoreDefault);
+    input.addEventListener('change', restoreDefault);
+    input.form?.addEventListener('submit', restoreDefault);
+    restoreDefault();
 });
+
+const membershipStatus = document.getElementById('membership-status');
+const deceasedAt = document.getElementById('deceased-at');
+if (membershipStatus && deceasedAt) {
+    const updateDeathDate = () => {
+        deceasedAt.disabled = membershipStatus.value !== 'Deceased';
+    };
+    membershipStatus.addEventListener('change', updateDeathDate);
+    updateDeathDate();
+}
+
+const rosterDialog = document.getElementById('member-roster-dialog');
+if (rosterDialog) {
+    const rosterForm = rosterDialog.querySelector('[data-roster-form]');
+    const rosterAction = rosterForm.action;
+    document.querySelectorAll('[data-open-roster]').forEach(button => {
+        button.addEventListener('click', () => {
+            const filters = document.querySelector('[data-live-search]');
+            if (filters) {
+                ['q', 'status', 'location'].forEach(name => {
+                    rosterForm.elements.namedItem(name).value = filters.elements.namedItem(name).value;
+                });
+            }
+            rosterDialog.showModal();
+        });
+    });
+    rosterDialog.querySelectorAll('[data-close-roster]').forEach(button => {
+        button.addEventListener('click', () => rosterDialog.close());
+    });
+    rosterForm.addEventListener('submit', () => {
+        rosterForm.action = rosterForm.elements.namedItem('template_url')?.value || rosterAction;
+    });
+    if (rosterDialog.hasAttribute('data-open-on-load')) {
+        rosterDialog.showModal();
+    }
+}
+
+document.querySelectorAll('[data-template-edit]').forEach(button => {
+    const form = document.getElementById(button.getAttribute('aria-controls'));
+    button.addEventListener('click', () => {
+        form.hidden = !form.hidden;
+        button.setAttribute('aria-expanded', String(!form.hidden));
+    });
+});
+
+const printOptions = document.getElementById('print-options');
+let pendingPrintUrl;
+document.addEventListener('click', event => {
+    const button = event.target.closest('[data-print], a[href*="print=1"]');
+    if (!button || !printOptions) {
+        return;
+    }
+
+    event.preventDefault();
+    pendingPrintUrl = button.hasAttribute('data-print') ? null : button.href;
+    if (pendingPrintUrl) {
+        const url = new URL(pendingPrintUrl);
+        url.search = location.search;
+        url.searchParams.set('print', '1');
+        pendingPrintUrl = url.href;
+    }
+    printOptions.returnValue = 'cancel';
+    printOptions.showModal();
+});
+printOptions?.querySelector('form').addEventListener('submit', event => {
+    if (event.submitter?.value !== 'print') {
+        return;
+    }
+
+    const template = printOptions.querySelector('input[name="template"]:checked');
+    if (template.value) {
+        const reportUrl = new URL(template.value);
+        const liveFilters = document.querySelector('[data-live-search]');
+        const filters = liveFilters
+            ? new URLSearchParams(new FormData(liveFilters))
+            : new URL(pendingPrintUrl || location.href).searchParams;
+        reportUrl.search = filters.toString();
+        reportUrl.searchParams.set('report', printOptions.dataset.report);
+        if (template.hasAttribute('data-census-default')) {
+            printOptions.querySelectorAll('[data-census-fields] input').forEach(input => {
+                reportUrl.searchParams.set(input.name, input.value);
+            });
+        }
+        if (printOptions.dataset.event) {
+            reportUrl.searchParams.set('event', printOptions.dataset.event);
+        }
+        if (printOptions.dataset.report === 'census') {
+            event.preventDefault();
+            window.open(reportUrl.href, '_blank', 'noopener');
+            printOptions.close();
+        } else {
+            location.assign(reportUrl);
+        }
+    } else if (pendingPrintUrl) {
+        location.assign(pendingPrintUrl);
+    } else {
+        event.preventDefault();
+        printOptions.close();
+        window.print();
+    }
+});
+document.getElementById('print-template')?.addEventListener('change', event => {
+    const censusFields = printOptions.querySelector('[data-census-fields]');
+    if (censusFields) {
+        censusFields.hidden = !event.target.hasAttribute('data-census-default');
+        censusFields.disabled = censusFields.hidden;
+    }
+    const format = event.target.dataset.format;
+    printOptions.querySelector('[data-print-hint]').hidden = !format;
+    printOptions.querySelector('[data-print-hint]').textContent = !format
+        ? 'The default layout is used when no custom template is selected.'
+        : format === 'pdf'
+            ? 'Open the filled PDF, review its layout, then print from the PDF viewer.'
+            : 'Download the filled report, then open it in Word or Excel to review and print.';
+    printOptions.querySelector('[data-print-action]').textContent = censusFields
+        ? 'Generate Report'
+        : !format ? 'Print' : format === 'pdf' ? 'Open report' : 'Download report';
+});
+if (document.querySelector('[data-print-on-load]')) {
+    window.addEventListener('load', () => window.print(), { once: true });
+}
 const confirmation = document.getElementById('site-confirmation');
 if (confirmation) {
     let pendingForm;
@@ -80,7 +210,7 @@ if (searchForm && searchResults && searchStatus && !new URLSearchParams(location
     let searchTimer;
     let pendingSearch;
 
-    searchInput.addEventListener('input', event => {
+    function scheduleSearch(event) {
         clearTimeout(searchTimer);
         pendingSearch?.abort();
         searchResults.removeAttribute('aria-busy');
@@ -126,7 +256,7 @@ if (searchForm && searchResults && searchStatus && !new URLSearchParams(location
             } catch (error) {
                 if (!request.signal.aborted) {
                     searchStatus.classList.remove('sr-only');
-                    searchStatus.textContent = 'Live search could not load. Use the Search button to try again.';
+                    searchStatus.textContent = 'Live search could not load. Press Enter in the search field to try again.';
                 }
             } finally {
                 if (!request.signal.aborted) {
@@ -136,6 +266,11 @@ if (searchForm && searchResults && searchStatus && !new URLSearchParams(location
         }, 300);
         searchStatus.classList.add('sr-only');
         searchStatus.textContent = '';
+    }
+
+    searchInput.addEventListener('input', scheduleSearch);
+    searchForm.querySelectorAll('select').forEach(filter => {
+        filter.addEventListener('change', scheduleSearch);
     });
 }
 

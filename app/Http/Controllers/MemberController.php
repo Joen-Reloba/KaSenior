@@ -3,31 +3,43 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class MemberController extends Controller
 {
     public function index(Request $request): View
     {
-        $request->validate(['q' => ['nullable', 'string', 'max:255'], 'status' => ['nullable', Rule::in(['Active', 'Deceased'])], 'location' => ['nullable', 'string', 'max:255']]);
-        $query = Member::query();
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', Rule::in(['Active', 'Deceased', 'Archived'])],
+            'location' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', Rule::in(['alphabetical', 'recent'])],
+        ]);
+        $archived = $request->input('status') === 'Archived';
+        $query = $archived ? Member::onlyTrashed() : Member::query();
         if ($request->filled('q')) {
             $query->whereRaw("CONCAT_WS(' ', first_name, middle_name, last_name) LIKE ?", ['%'.$request->string('q').'%']);
         }
-        foreach (['status', 'location'] as $filter) {
-            if ($request->filled($filter)) {
-                $query->where($filter, $request->input($filter));
-            }
+        if (! $archived && $request->filled('status')) {
+            $query->where('status', $request->input('status'));
         }
-        $query->orderBy('last_name')->orderBy('first_name')->orderBy('id');
-        $members = $request->boolean('print') ? $query->get() : $query->paginate(10)->withQueryString();
+        if ($request->filled('location')) {
+            $query->where('location', $request->input('location'));
+        }
+        $printing = $request->boolean('print');
+        if (! $printing && $request->input('sort') === 'recent') {
+            $query->latest()->orderByDesc('id');
+        } else {
+            $query->orderBy('last_name')->orderBy('first_name')->orderBy('id');
+        }
+        $members = $printing ? $query->get() : $query->paginate(10)->withQueryString();
 
         return view('members.index', [
             'members' => $members,
-            'locations' => Member::distinct()->orderBy('location')->pluck('location'),
+            'locations' => Member::withTrashed()->distinct()->orderBy('location')->pluck('location'),
             'active' => Member::where('status', 'Active')->count(),
             'deceased' => Member::where('status', 'Deceased')->count(),
         ]);
@@ -57,7 +69,7 @@ class MemberController extends Controller
 
     public function update(Request $request, Member $member): RedirectResponse
     {
-        $member->update($this->validated($request));
+        $member->update($this->validated($request, $member));
 
         return redirect()->route('members.show', $member)->with('success', 'Member updated.');
     }
@@ -66,23 +78,38 @@ class MemberController extends Controller
     {
         $member->delete();
 
-        return redirect()->route('members.index')->with('success', 'Member removed from the member list. Event records are retained.');
+        return redirect()->route('members.index')->with('success', 'Member archived. Select Archived in the status filter to view this member.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Member $member = null): array
     {
-        return $request->validate([
+        foreach (['location' => '7C', 'barangay' => 'Baliok', 'district' => 'Talomo'] as $field => $default) {
+            if ($request->exists($field) && ! $request->filled($field)) {
+                $request->merge([$field => $default]);
+            }
+        }
+        $data = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
+            'name_extension' => ['nullable', 'string', 'max:40'],
+            'barangay' => ['sometimes', 'required', 'string', 'max:255'],
+            'district' => ['sometimes', 'required', 'string', 'max:255'],
+            'senior_citizen_id' => ['nullable', 'string', 'max:100'],
+            'id_issued_at' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:birth_date', 'before_or_equal:today'],
             'gender' => ['required', Rule::in(['Female', 'Male'])],
             'birth_date' => ['required', 'date', 'before_or_equal:'.today()->subYears(60)->toDateString()],
             'location' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:255'],
             'mobile' => ['nullable', 'string', 'max:40'],
-            'emergency_contact' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::in(['Active', 'Deceased'])],
+            'deceased_at' => ['exclude_unless:status,Deceased', 'nullable', 'date_format:Y-m-d', 'after_or_equal:birth_date', 'before_or_equal:today'],
             'registered_at' => ['required', 'date', 'after_or_equal:birth_date', 'before_or_equal:today'],
         ]);
+        $data['deceased_at'] = $data['status'] === 'Deceased'
+            ? ($data['deceased_at'] ?? $member?->deceased_at ?? today())
+            : null;
+
+        return $data;
+
     }
 }

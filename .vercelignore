@@ -1,0 +1,17 @@
+.env*
+.git
+.agents
+.codex
+.aws
+auth.json
+vendor
+node_modules
+tests
+tmp
+storage
+bootstrap/cache/*.php
+database/seeders
+database/factories
+database/*.sqlite*
+public/hot
+public/storage

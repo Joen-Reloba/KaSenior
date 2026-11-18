@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -14,7 +15,7 @@ class AccountController extends Controller
 {
     public function unlock(Request $request): RedirectResponse
     {
-        $pinHash = config('kasenior.superadmin_pin_hash');
+        $pinHash = $this->pinHash();
 
         $pin = $request->input('password');
         if (! is_string($pinHash) || $pinHash === '' || ! is_string($pin) || ! preg_match('/^[0-9]{9}$/D', $pin)
@@ -30,9 +31,50 @@ class AccountController extends Controller
 
     private function isUnlocked(Request $request): bool
     {
-        $pinHash = config('kasenior.superadmin_pin_hash');
+        $pinHash = $this->pinHash();
 
         return is_string($pinHash) && $pinHash !== '' && hash_equals(hash('sha256', $pinHash), (string) $request->session()->get('superadmin_unlock'));
+    }
+
+    private function pinHash(): ?string
+    {
+        return DB::table('superadmin_settings')->where('id', 1)->value('pin_hash') ?? config('kasenior.superadmin_pin_hash');
+    }
+
+    public function superadminSettings(Request $request): View|RedirectResponse
+    {
+        if (! $this->isUnlocked($request)) {
+            return redirect()->route('admins.pin');
+        }
+
+        return view('admin-settings');
+    }
+
+    public function changePin(Request $request): RedirectResponse
+    {
+        abort_unless($this->isUnlocked($request), 403);
+
+        $data = $request->validate([
+            'current_password' => ['bail', 'required', 'string', 'regex:/^[0-9]{9}$/D'],
+            'password' => ['bail', 'required', 'string', 'regex:/^[0-9]{9}$/D', 'confirmed', 'different:current_password'],
+        ], [], ['current_password' => 'current PIN', 'password' => 'new PIN']);
+
+        $settings = DB::table('superadmin_settings')->where('id', 1);
+        $storedHash = $settings->value('pin_hash');
+        $pinHash = $storedHash ?? config('kasenior.superadmin_pin_hash');
+        if (! is_string($pinHash) || $pinHash === '' || ! Hash::check($data['current_password'], $pinHash)) {
+            return back()->withErrors(['current_password' => 'The current PIN is incorrect.']);
+        }
+
+        $newHash = Hash::make($data['password']);
+        if ($settings->where('pin_hash', $storedHash)->update(['pin_hash' => $newHash]) !== 1) {
+            return redirect()->route('admins.pin')->withErrors(['pin' => 'The PIN changed. Sign in again.']);
+        }
+
+        $request->session()->regenerate(true);
+        $request->session()->put('superadmin_unlock', hash('sha256', $newHash));
+
+        return redirect()->route('admins.settings')->with('success', 'Superadmin PIN changed.');
     }
 
     public function index(Request $request): View|RedirectResponse

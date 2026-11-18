@@ -1,0 +1,42 @@
+FROM dunglas/frankenphp:1-php8.5-alpine AS base
+
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates \
+    && install-php-extensions bcmath curl dom fileinfo gd iconv mbstring pdo_mysql simplexml xml xmlreader xmlwriter zip \
+    && cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+FROM base AS dependencies
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --no-progress --prefer-dist --no-scripts --no-autoloader
+
+COPY app ./app
+COPY bootstrap ./bootstrap
+COPY config ./config
+COPY routes ./routes
+COPY artisan ./
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction
+
+FROM base AS runtime
+COPY --from=dependencies /app /app
+COPY database/migrations ./database/migrations
+COPY resources/views ./resources/views
+COPY public ./public
+COPY Caddyfile /etc/caddy/Caddyfile
+
+RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+
+ENV PORT=80 \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    DB_CONNECTION=mysql \
+    DB_PORT=4000 \
+    MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt \
+    SESSION_DRIVER=database \
+    SESSION_SECURE_COOKIE=true \
+    CACHE_STORE=database \
+    QUEUE_CONNECTION=sync \
+    LOG_CHANNEL=stderr
+
+CMD ["sh", "-ec", "if [ \"$KASENIOR_RUN_MIGRATIONS\" = 1 ]; then php artisan kasenior:migrate-tidb; fi; exec frankenphp run --config /etc/caddy/Caddyfile"]

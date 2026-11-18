@@ -12,6 +12,34 @@
     box-shadow: 0 16px 48px #2e3d3826;
 }
 .confirmation-dialog::backdrop { background: #24353080; }
+.print-dialog { width: min(460px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 28px; text-align: left; overflow-y: auto; }
+.print-dialog-header { display: flex; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.print-dialog-header h2 { font-size: 23px; }
+.print-dialog-header p { margin-top: 4px; font-size: 14px; }
+.print-dialog-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; background: #e1eee8; color: var(--green); }
+.print-layouts { display: grid; gap: 12px; min-width: 0; margin: 20px 0 16px; padding: 0; border: 0; }
+.print-layouts legend { padding: 0; margin-bottom: 5px; font-size: 16px; font-weight: 600; }
+.print-layout-help { font-size: 14px; margin-bottom: 4px; }
+.print-layout-card { display: flex; flex-direction: row; align-items: center; gap: 12px; min-height: 72px; padding: 14px; border: 1px solid #cfc8bf; border-radius: 12px; cursor: pointer; }
+.print-layout-card:hover { background: #f3f7f4; border-color: var(--green); }
+.print-layout-card:has(input:checked) { background: #e1eee8; border-color: var(--green); box-shadow: inset 0 0 0 1px var(--green); }
+.print-layout-card:has(input:focus-visible) { outline: 3px solid #315b9c; outline-offset: 3px; }
+.print-layout-card input[type="radio"] { flex: none; width: 21px; height: 21px; min-height: 0; padding: 0; margin: 0; accent-color: var(--green); }
+.print-layout-card > span { min-width: 0; }
+.print-layout-title { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.print-layout-card small { display: block; margin-top: 4px; font-size: 13px; line-height: 1.4; }
+.print-recommended { padding: 3px 7px; border-radius: 6px; background: var(--green); color: white; font-size: 10px; }
+.print-manage { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 10px; border: 1px solid #cfc8bf; border-radius: 10px; font-size: 14px; font-weight: 600; text-align: center; }
+.print-manage:hover { background: #edf3ef; border-color: var(--green); }
+.print-manage .icon { width: 18px; height: 18px; }
+.print-dialog [data-print-hint] { font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+.print-dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.print-dialog-actions button { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 16px; padding: 10px; }
+.print-dialog-actions button[value="print"] { background: var(--green); color: white; }
+.print-dialog-actions button:hover { filter: brightness(.94); }
+@media (prefers-reduced-motion: no-preference) {
+    .print-layout-card, .print-manage { transition: background-color 160ms ease, border-color 160ms ease; }
+}
 .pin-dialog::backdrop { backdrop-filter: blur(6px); }
 .pin-panel { display: grid; gap: 16px; text-align: left; }
 .pin-panel label { display: grid; gap: 8px; font-weight: 600; }
@@ -75,4 +103,22 @@
 @keyframes bar-enter {
     from { clip-path: inset(0 100% 0 0 round 20px); }
     to { clip-path: inset(0 round 20px); }
+}
+.confirmation-dialog.roster-dialog { width: min(900px, calc(100vw - 32px)); max-height: 88vh; max-height: 88dvh; overflow-y: auto; text-align: left; overscroll-behavior: contain; }
+.roster-dialog .page-header { align-items: start; gap: 16px; }
+.roster-dialog .panel { padding: 20px; }
+input:disabled { background: #f0f0ed; color: #737773; cursor: not-allowed; }
+.print-dialog[data-report="census"] { width: min(900px, calc(100% - 32px)); max-height: 88dvh; overscroll-behavior: contain; }
+.print-dialog[data-report="census"] .page-header { align-items: start; gap: 16px; margin: 0; }
+.print-dialog[data-report="census"] .print-layouts { margin: 0; }
+.print-dialog[data-report="census"] .print-dialog-actions { display: flex; justify-content: flex-end; margin: 0; }
+[data-census-fields] { min-width: 0; margin: 0; padding: 0; border: 0; }
+[data-census-fields] .panel { padding: 20px; }
+[data-census-fields] h2 { margin-bottom: 16px; }
+.census-print-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.census-print-grid > :is(p, small, .census-print-wide) { grid-column: 1 / -1; }
+.census-print-grid label { min-width: 0; }
+[data-census-fields][hidden] { display: none; }
+@media (max-width: 520px) {
+    .census-print-grid { grid-template-columns: 1fr; }
 }

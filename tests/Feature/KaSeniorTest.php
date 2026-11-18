@@ -42,7 +42,15 @@ class KaSeniorTest extends TestCase
         $this->put('/members/'.$member->id, array_merge($data, ['status' => 'Deceased']))->assertSessionHasNoErrors();
         $this->assertSame(1, $event->fresh()->summary()['count']);
         $this->get('/dashboard')->assertOk();
-        $this->delete('/members/'.$member->id)->assertRedirect();
+        $this->delete('/members/'.$member->id)->assertRedirect('/members');
+        $this->assertSoftDeleted($member);
+        foreach (['', 'Active', 'Deceased'] as $status) {
+            $this->get('/members?status='.$status)->assertOk()->assertDontSee('Maria Santos');
+        }
+        Member::create(array_replace($data, ['first_name' => 'Ana']));
+        $this->get('/members?status=Archived')->assertOk()->assertSee('Maria Santos')->assertDontSee('Ana Santos');
+        $this->get('/members/'.$member->id)->assertOk()->assertSee('Archived')->assertDontSee('Archive Member')->assertDontSee('Edit Member');
+        $this->get('/members/'.$member->id.'/edit')->assertNotFound();
         $this->get('/events/'.$event->id)->assertOk()->assertSee('Maria Santos');
     }
 

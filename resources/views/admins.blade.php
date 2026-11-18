@@ -1,17 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Superadmin')
 @section('content')
-<header class="page-header">
-    <h1>Admin Accounts</h1>
-    <form method="post" action="{{ route('admins.exit') }}" data-confirm="Sign out of Superadmin?" data-confirm-account="Superadmin" data-confirm-role="Superadmin">
-        @csrf
-        <button class="button small outline admin-reset" type="submit" aria-label="Exit Superadmin" title="Exit Superadmin">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M9 21H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5M15 8l4 4-4 4M8 12h11"/>
-            </svg>
-        </button>
-    </form>
-</header>
+<header><h1>Admin Accounts</h1></header>
 <form class="panel stack" method="post" action="{{ route('admins.store') }}">
     @csrf
     <h2>Create Admin</h2>

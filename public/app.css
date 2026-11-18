@@ -34,6 +34,21 @@ small { font-size: 16px; }
 .signout-form { margin-top: auto; }
 .sidebar .signout-button { width: 100%; min-height: 60px; justify-content: flex-start; gap: 14px; padding: 14px 16px; background: transparent; }
 .signout-button svg { flex: none; }
+.sidebar .signout-button:focus-visible { background: var(--green); color: white; filter: none; box-shadow: 0 4px 12px #2f3e3a24; }
+@media (hover: hover) {
+    .sidebar .signout-button:hover { background: var(--green); color: white; filter: none; box-shadow: 0 4px 12px #2f3e3a24; }
+}
+.sidebar .signout-button:active { background: #365e50; color: white; box-shadow: none; }
+@media (prefers-reduced-motion: no-preference) {
+    .sidebar .signout-button { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 120ms ease; }
+    .signout-button svg { transition: transform 180ms ease; }
+    .sidebar .signout-button:focus-visible svg { transform: translateX(3px); }
+    @media (hover: hover) {
+        .sidebar .signout-button:hover { transform: translateY(-2px); }
+        .sidebar .signout-button:hover svg { transform: translateX(3px); }
+    }
+    .sidebar .signout-button:active { transform: translateY(1px); }
+}
 .main { min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; display: flex; flex-direction: column; gap: 28px; padding: 40px; min-width: 0; }
 .main > * { flex-shrink: 0; }
 .page-header, .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
@@ -190,3 +205,24 @@ body:has(.superadmin-shortcut) .main { padding-bottom: 92px; }
 .shell.developer-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .admin-reset { width: 48px; min-height: 48px; padding: 0; }
 .back-link { margin-bottom: 12px; }
+.template-card-grid { display: grid; gap: 16px; margin-block: 12px 24px; }
+.template-card { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 20px; }
+.template-card-info { flex: 1 1 245px; min-width: 0; display: flex; align-items: center; gap: 16px; }
+.template-card-copy { min-width: 0; }
+.template-file-icon { display: grid; place-items: center; flex: 0 0 56px; height: 56px; border-radius: 16px; background: #e1eee8; color: var(--green); }
+.template-card svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.template-file-icon svg { width: 27px; height: 27px; stroke-width: 1.4; }
+.template-card-header { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.template-card-header h3 { overflow-wrap: anywhere; }
+.template-card-copy p { margin-top: 4px; }
+.template-card-date { display: flex; align-items: center; gap: 5px; font-size: 14px; }
+.template-card-date svg { width: 15px; height: 15px; }
+.template-format { padding: 4px 9px; background: #e1eee8; color: var(--green); border-radius: 8px; font-size: 13px; font-weight: 700; }
+.template-card-actions { margin-inline-start: auto; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.template-card .template-action { min-height: 44px; padding: 8px 12px; gap: 7px; border-radius: 10px; font-size: 14px; }
+.template-card .template-delete { color: #96372e; border-color: #e5c3bf; background: #fff7f6; }
+.template-edit { flex-basis: 100%; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.template-edit[hidden] { display: none; }
+@media (max-width: 760px) {
+    .superadmin-sidebar nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

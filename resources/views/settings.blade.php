@@ -2,6 +2,11 @@
 @section('title', 'Settings')
 @section('content')
 <header><h1>Settings</h1></header>
+<section class="panel stack">
+    <h2>Print templates</h2>
+    <p>Save Word, Excel, and PDF templates to reuse when printing reports.</p>
+    <div class="actions"><a class="button outline" href="{{ route('templates.index') }}">Manage templates</a></div>
+</section>
 <form class="panel stack" method="post" action="{{ route('settings.password') }}">
     @csrf
     @method('PUT')
