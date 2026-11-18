@@ -7,18 +7,12 @@
 </header>
 <form class="filters no-print" data-live-search method="get">
     <input aria-label="Search by name" name="q" value="{{ request('q') }}" placeholder="Search by name…">
-    <label class="member-filter"><span>Status</span>
-        <select name="status"><option value="">All statuses</option>@foreach(['Active', 'Deceased', 'Archived'] as $status)<option @selected(request('status') === $status)>{{ $status }}</option>@endforeach</select>
-    </label>
-    <label class="member-filter"><span>Puroks</span>
-        <select name="location"><option value="">All Puroks</option>@foreach($locations as $location)<option @selected(request('location') === $location)>{{ $location }}</option>@endforeach</select>
-    </label>
-    <label class="member-filter"><span>Sort</span>
-        <select name="sort">
-            <option value="alphabetical" @selected(request('sort', 'alphabetical') === 'alphabetical')>Alphabetical</option>
-            <option value="recent" @selected(request('sort') === 'recent')>Recently added</option>
-        </select>
-    </label>
+    <select aria-label="Member status" name="status"><option value="">All statuses</option>@foreach(['Active', 'Deceased', 'Archived'] as $status)<option @selected(request('status') === $status)>{{ $status }}</option>@endforeach</select>
+    <select aria-label="Location" name="location"><option value="">All Puroks</option>@foreach($locations as $location)<option @selected(request('location') === $location)>{{ $location }}</option>@endforeach</select>
+    <select aria-label="Sort members" name="sort">
+        <option value="alphabetical" @selected(request('sort', 'alphabetical') === 'alphabetical')>Alphabetical</option>
+        <option value="recent" @selected(request('sort') === 'recent')>Recently added</option>
+    </select>
     <a class="button outline" href="{{ route('members.index') }}">Reset</a>
 </form>
 
